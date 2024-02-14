@@ -25,16 +25,17 @@ export class Git {
       return;
     }
     const git = this.extension?.exports?.getAPI(1);
-    const currentBranch = git?.repositories[0]?.state.HEAD?.name;
     try {
       const existingBranch = await git?.repositories[0]?.getBranch(branchName);
       await git?.repositories[0]?.checkout(branchName);
-      vscode.window.showInformationMessage(`Existing branch ${existingBranch}`);
+      vscode.window.showInformationMessage(
+        `Checking out existing branch ${existingBranch?.name}`
+      );
     } catch (e) {
-      vscode.window.showInformationMessage(`Branch not there, creating...`);
+      vscode.window.showInformationMessage(`Creating new branch ${branchName}`);
       await git?.repositories[0]?.createBranch(branchName, true);
       vscode.window.showInformationMessage(
-        `Created and checked out ${git?.repositories[0]?.state.HEAD?.name}`
+        `Created and checked out ${Git.branchName}`
       );
     }
   }

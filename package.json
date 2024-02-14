@@ -61,11 +61,6 @@
       ],
       "view/item/context": [
         {
-          "command": "colinear.project.remove",
-          "when": "view == colinearTree && viewItem == project",
-          "group": "inline"
-        },
-        {
           "command": "colinear.issue.checkout",
           "when": "view == colinearTree && viewItem == issue",
           "group": "inline"

@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
-import { Attachment, User } from "@linear/sdk";
 import {
   AttachmentTreeItem,
+  ColinearTreeItem,
   CurrentBranchTreeItem,
+  ItemDecorationProvider,
   IssueTreeItem,
   MilestoneTreeItem,
   MyIssuesTreeItem,
@@ -10,60 +11,19 @@ import {
   ProjectIssuesTreeItem,
 } from "./items";
 import { Git } from "./git";
-import {
-  IssuePartial,
-  Linear,
-  ProjectMilestonePartial,
-  ProjectPartial,
-} from "./linear";
-
-type ColinearTreeItem = {
-  parent?: ColinearTreeItem;
-} & (
-  | {
-      type: "currentBranch";
-      branchName?: string;
-    }
-  | {
-      type: "myIssues";
-      viewer: User;
-    }
-  | {
-      type: "issue";
-      issue: IssuePartial;
-    }
-  | {
-      type: "attachment";
-      attachment: Attachment;
-    }
-  | {
-      type: "project";
-      project: ProjectPartial;
-    }
-  | {
-      type: "milestone";
-      milestone: ProjectMilestonePartial;
-    }
-  | {
-      type: "noMilestone";
-      project: ProjectPartial;
-    }
-  | {
-      type: "favorites";
-    }
-  | {
-      type: "message";
-      message: string;
-    }
-);
+import { Linear, ProjectMilestonePartial } from "./linear";
 
 export class ColinearTreeProvider
-  implements vscode.TreeDataProvider<ColinearTreeItem>
+  implements vscode.TreeDataProvider<ColinearTreeItem>, vscode.Disposable
 {
   constructor(
     private linear: Linear,
     private context: vscode.ExtensionContext
-  ) {}
+  ) {
+    this._disposables.push(
+      vscode.window.registerFileDecorationProvider(ItemDecorationProvider)
+    );
+  }
 
   getTreeItem(element: ColinearTreeItem): vscode.TreeItem {
     switch (element.type) {
@@ -74,6 +34,7 @@ export class ColinearTreeProvider
       case "issue":
         return new IssueTreeItem(
           element.issue,
+          element.parent,
           element.issue.attachments.nodes.length === 0
             ? vscode.TreeItemCollapsibleState.None
             : element.parent?.type === "currentBranch"
@@ -109,6 +70,7 @@ export class ColinearTreeProvider
 
     // Root
     if (!element) {
+      console.log("ROOT");
       return [
         {
           type: "currentBranch",
@@ -270,5 +232,10 @@ export class ColinearTreeProvider
 
   refresh(item?: ColinearTreeItem): void {
     this._onDidChangeTreeData.fire(item);
+  }
+
+  private _disposables: vscode.Disposable[] = [];
+  dispose() {
+    this._disposables.forEach((dispose) => dispose.dispose());
   }
 }

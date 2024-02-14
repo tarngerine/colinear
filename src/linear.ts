@@ -87,7 +87,7 @@ export type IssuePartial = Pick<
 > & {
   state: WorkflowState;
   attachments: {
-    nodes: Pick<Attachment, "title" | "url" | "sourceType">[];
+    nodes: Pick<Attachment, "title" | "url" | "sourceType" | "metadata">[];
   };
 };
 
@@ -105,7 +105,8 @@ const issueQueryFragment = `
     nodes {
       title,
       url,
-      sourceType
+      sourceType,
+      metadata
     }
   }
 `;

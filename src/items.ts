@@ -6,6 +6,46 @@ import {
   ProjectMilestonePartial,
 } from "./linear";
 
+export type ColinearTreeItem = {
+  parent?: ColinearTreeItem;
+} & (
+  | {
+      type: "currentBranch";
+      branchName?: string;
+    }
+  | {
+      type: "myIssues";
+      viewer: User;
+    }
+  | {
+      type: "issue";
+      issue: IssuePartial;
+    }
+  | {
+      type: "attachment";
+      attachment: Attachment;
+    }
+  | {
+      type: "project";
+      project: ProjectPartial;
+    }
+  | {
+      type: "milestone";
+      milestone: ProjectMilestonePartial;
+    }
+  | {
+      type: "noMilestone";
+      project: ProjectPartial;
+    }
+  | {
+      type: "favorites";
+    }
+  | {
+      type: "message";
+      message: string;
+    }
+);
+
 class BaseTreeItem extends vscode.TreeItem {
   constructor(
     label: string,
@@ -44,9 +84,16 @@ export class MyIssuesTreeItem extends BaseTreeItem {
 export class IssueTreeItem extends BaseTreeItem {
   constructor(
     public readonly issue: IssuePartial,
+    public readonly parent?: ColinearTreeItem,
     collapsed?: vscode.TreeItemCollapsibleState
   ) {
-    super(issue.title, issue.id, collapsed);
+    const idPrefix =
+      parent?.type === "milestone"
+        ? parent.milestone
+        : parent?.type === "currentBranch"
+        ? "currentBranch"
+        : "";
+    super(issue.title, idPrefix + issue.id, collapsed);
     this.description = issue.identifier;
     if (issue.description) {
       this.tooltip = issue.description;
@@ -82,9 +129,50 @@ export class AttachmentTreeItem extends BaseTreeItem {
       vscode.TreeItemCollapsibleState.None
     );
     this.description = attachment.sourceType;
+
     switch (attachment.sourceType) {
       case "github": {
         this.iconPath = new vscode.ThemeIcon("github");
+        this.resourceUri = vscode.Uri.parse(attachment.url);
+        const isApproved =
+          attachment.metadata.reviews &&
+          attachment.metadata.reviews.length > 0 &&
+          attachment.metadata.reviews.find(
+            (review: any) => review.state === "approved"
+          );
+        const decoration: vscode.FileDecoration | undefined = (() => {
+          const status = attachment.metadata.status;
+          if (status === "merged") {
+            return {
+              badge: "🚀",
+              tooltip: "Merged",
+            };
+          }
+          if (isApproved) {
+            return {
+              badge: "✅",
+              tooltip: "Approved",
+            };
+          }
+          if (status === "inReview") {
+            return {
+              badge: "⏳",
+              tooltip: "In review",
+            };
+          }
+          if (status === "closed") {
+            return {
+              badge: "❌",
+              tooltip: "Closed",
+            };
+          }
+        })();
+        if (decoration) {
+          ItemDecorationProvider.setDecoration(this.resourceUri, {
+            propagate: false,
+            ...decoration,
+          });
+        }
         break;
       }
       case "figma": {
@@ -133,3 +221,34 @@ export class RefreshTreeItem extends vscode.TreeItem {
     super("Refresh", vscode.TreeItemCollapsibleState.None);
   }
 }
+
+class DecorationProvider
+  implements vscode.FileDecorationProvider, vscode.Disposable
+{
+  private _store: Map<string, vscode.FileDecoration> = new Map();
+  public setDecoration(uri: vscode.Uri, decoration: vscode.FileDecoration) {
+    this._store.set(uri.path, decoration);
+    this._onDidChangeFileDecorations.fire(uri);
+  }
+
+  provideFileDecoration(
+    uri: vscode.Uri,
+    _token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.FileDecoration> {
+    if (this._store.has(uri.path)) {
+      return this._store.get(uri.path);
+    }
+    return undefined;
+  }
+
+  _onDidChangeFileDecorations: vscode.EventEmitter<vscode.Uri | vscode.Uri[]> =
+    new vscode.EventEmitter<vscode.Uri | vscode.Uri[]>();
+  onDidChangeFileDecorations: vscode.Event<vscode.Uri | vscode.Uri[]> =
+    this._onDidChangeFileDecorations.event;
+
+  dispose() {
+    this._store.clear();
+  }
+}
+
+export const ItemDecorationProvider = new DecorationProvider();
