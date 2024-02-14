@@ -32,6 +32,41 @@ export class Git {
         `Checking out existing branch ${existingBranch?.name}`
       );
     } catch (e) {
+      const workspaceDefaultBranch = vscode.workspace
+        .getConfiguration("git")
+        .get<string>("defaultBranchName");
+
+      const defaultBranch =
+        workspaceDefaultBranch && workspaceDefaultBranch.length > 0
+          ? workspaceDefaultBranch
+          : "main";
+      // show quick pick to select between current branch and the configured workspace default branch
+      const selection = await vscode.window.showQuickPick(
+        [
+          {
+            label: defaultBranch,
+            detail: "Workspace setting: git.defaultBranchName",
+            iconPath: new vscode.ThemeIcon("git-branch"),
+          },
+          {
+            label: Git.branchName!,
+            detail: "Current branch",
+            iconPath: new vscode.ThemeIcon("git-branch"),
+          },
+        ],
+        {
+          placeHolder: `Select a base branch for ${branchName}…`,
+        }
+      );
+      if (!selection) {
+        return;
+      }
+      const base = selection.label;
+
+      await git?.repositories[0]?.checkout(base);
+      vscode.window.showInformationMessage(
+        `Creating new branch ${branchName} from ${base}`
+      );
       vscode.window.showInformationMessage(`Creating new branch ${branchName}`);
       await git?.repositories[0]?.createBranch(branchName, true);
       vscode.window.showInformationMessage(
