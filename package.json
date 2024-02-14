@@ -76,7 +76,49 @@
           "group": "inline"
         }
       ]
-    }
+    },
+    "colors": [
+      {
+        "id": "linear.issue.done",
+        "description": "Color for Linear issue status: Done",
+        "defaults": {
+          "dark": "#5e6ad2",
+          "light": "#5e6ad2",
+          "highContrast": "#5e6ad2",
+          "highContrastLight": "#5e6ad2"
+        }
+      },
+      {
+        "id": "linear.issue.inProgress",
+        "description": "Color for Linear issue status: Done",
+        "defaults": {
+          "dark": "#f2c94c",
+          "light": "#f2c94c",
+          "highContrast": "#f2c94c",
+          "highContrastLight": "#f2c94c"
+        }
+      },
+      {
+        "id": "linear.issue.inReview",
+        "description": "Color for Linear issue status: Done",
+        "defaults": {
+          "dark": "#fc7840",
+          "light": "#fc7840",
+          "highContrast": "#fc7840",
+          "highContrastLight": "#fc7840"
+        }
+      },
+      {
+        "id": "linear.issue.readyToMerge",
+        "description": "Color for Linear issue status: Done",
+        "defaults": {
+          "dark": "#0f783c",
+          "light": "#0f783c",
+          "highContrast": "#0f783c",
+          "highContrastLight": "#0f783c"
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "pnpm run package",

@@ -99,13 +99,32 @@ export class IssueTreeItem extends BaseTreeItem {
       this.tooltip = issue.description;
     }
 
+    const githubAttachment = issue.attachments.nodes.find(
+      (attachment) => attachment.sourceType === "github"
+    );
+    const isInReview = githubAttachment?.metadata.status === "inReview";
+    const isReadytoMerge = githubAttachment?.metadata.reviews?.find(
+      (review: any) => review.state === "approved"
+    );
     switch (issue.state.type) {
       case "completed": {
-        this.iconPath = new vscode.ThemeIcon("circle-large-filled");
+        this.iconPath = new vscode.ThemeIcon(
+          "circle-large-filled",
+          new vscode.ThemeColor("linear.issue.done")
+        );
         break;
       }
       case "started": {
-        this.iconPath = new vscode.ThemeIcon("color-mode");
+        this.iconPath = new vscode.ThemeIcon(
+          "color-mode",
+          new vscode.ThemeColor(
+            isReadytoMerge
+              ? "linear.issue.readyToMerge"
+              : isInReview
+              ? "linear.issue.inReview"
+              : "linear.issue.inProgress"
+          )
+        );
         break;
       }
       case "canceled": {
