@@ -1,0 +1,118 @@
+{
+  "name": "colinear",
+  "displayName": "colinear",
+  "description": "something",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.86.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "colinear.refresh",
+        "title": "Colinear: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "colinear.issue.checkout",
+        "title": "Colinear: Checkout issue",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "colinear.issue.open",
+        "title": "Colinear: Open issue in Linear",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "colinear.attachment.open",
+        "title": "Colinear: Open attachment in Linear",
+        "icon": "$(link-external)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "colinearView",
+          "title": "Colinear",
+          "icon": "assets/colinear.svg"
+        }
+      ]
+    },
+    "views": {
+      "colinearView": [
+        {
+          "id": "colinearTree",
+          "name": "Colinear Tree"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "colinear.refresh",
+          "when": "view == colinearTree",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "colinear.project.remove",
+          "when": "view == colinearTree && viewItem == project",
+          "group": "inline"
+        },
+        {
+          "command": "colinear.issue.checkout",
+          "when": "view == colinearTree && viewItem == issue",
+          "group": "inline"
+        },
+        {
+          "command": "colinear.issue.open",
+          "when": "view == colinearTree && viewItem == issue",
+          "group": "inline"
+        },
+        {
+          "command": "colinear.attachment.open",
+          "when": "view == colinearTree && viewItem == attachment",
+          "group": "inline"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.86.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.1",
+    "@typescript-eslint/parser": "^6.19.1",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.9",
+    "eslint": "^8.56.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "extensionDependencies": [
+    "linear.linear-connect",
+    "vscode.git"
+  ],
+  "dependencies": {
+    "@linear/sdk": "^13.0.0"
+  }
+}
