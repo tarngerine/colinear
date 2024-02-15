@@ -4,48 +4,65 @@ import {
   IssuePartial,
   ProjectPartial,
   ProjectMilestonePartial,
+  CyclePartial,
+  CustomViewPartial,
+  RoadmapPartial,
 } from "./linear";
 import { DocumentHelper } from "./helpers/DocumentHelper";
+import { Item } from "./items/Item";
 
-export type ColinearTreeItem = {
-  parent?: ColinearTreeItem;
-} & (
+export type ColinearTreeItem =
   | {
-      type: "currentBranch";
-      branchName?: string;
-    }
-  | {
-      type: "myIssues";
-      viewer: User;
-    }
-  | {
-      type: "issue";
-      issue: IssuePartial;
-    }
-  | {
-      type: "attachment";
-      attachment: Attachment;
-    }
-  | {
-      type: "project";
-      project: ProjectPartial;
-    }
-  | {
-      type: "milestone";
-      milestone: ProjectMilestonePartial;
-    }
-  | {
-      type: "noMilestone";
-      project: ProjectPartial;
-    }
-  | {
-      type: "favorites";
-    }
-  | {
-      type: "message";
-      message: string;
-    }
-);
+      parent?: ColinearTreeItem;
+    } & (
+      | {
+          type: "currentBranch";
+          branchName?: string;
+        }
+      | {
+          type: "myIssues";
+          viewer: User;
+        }
+      | {
+          type: "issue";
+          issue: IssuePartial;
+        }
+      | {
+          type: "attachment";
+          attachment: Attachment;
+        }
+      | {
+          type: "project";
+          project: ProjectPartial;
+        }
+      | {
+          type: "milestone";
+          milestone: ProjectMilestonePartial;
+        }
+      | {
+          type: "noMilestone";
+          project: ProjectPartial;
+        }
+      | {
+          type: "favorites";
+        }
+      | {
+          type: "cycle";
+          cycle: CyclePartial;
+        }
+      | {
+          type: "customView";
+          customView: CustomViewPartial;
+        }
+      | {
+          type: "roadmap";
+          roadmap: RoadmapPartial;
+        }
+      | {
+          type: "message";
+          message: string;
+        }
+    );
 
 class BaseTreeItem extends vscode.TreeItem {
   constructor(
@@ -90,7 +107,9 @@ export class IssueTreeItem extends BaseTreeItem {
   ) {
     const idPrefix =
       parent?.type === "milestone"
-        ? parent.milestone
+        ? parent.milestone.id
+        : parent?.type === "cycle"
+        ? parent.cycle.id
         : parent?.type === "currentBranch"
         ? "currentBranch"
         : "";
@@ -246,6 +265,29 @@ export class NoMilestoneTreeItem extends BaseTreeItem {
     super("No milestone", project.id + "-noMilestone");
   }
   contextValue = "noMilestone";
+}
+
+export class CycleTreeItem extends BaseTreeItem {
+  constructor(public readonly cycle: CyclePartial) {
+    super(cycle.name ?? String(cycle.number), cycle.id);
+  }
+  iconPath = new vscode.ThemeIcon("play-circle");
+  contextValue = "cycle";
+}
+
+export class CustomViewTreeItem extends BaseTreeItem {
+  constructor(public readonly customView: CustomViewPartial) {
+    super(customView.name, customView.id);
+  }
+  iconPath = new vscode.ThemeIcon("list-filter");
+  contextValue = "customView";
+}
+
+export class RoadmapTreeItem extends BaseTreeItem {
+  constructor(public readonly roadmap: RoadmapPartial) {
+    super(roadmap.name, roadmap.id);
+  }
+  iconPath = new vscode.ThemeIcon("milestone");
 }
 
 export class RefreshTreeItem extends vscode.TreeItem {

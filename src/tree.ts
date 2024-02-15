@@ -9,9 +9,17 @@ import {
   MyIssuesTreeItem,
   NoMilestoneTreeItem,
   ProjectIssuesTreeItem,
+  CycleTreeItem,
+  CustomViewTreeItem,
+  RoadmapTreeItem,
 } from "./items";
 import { Git } from "./git";
-import { Linear, ProjectMilestonePartial } from "./linear";
+import {
+  IssuePartial,
+  Linear,
+  ProjectMilestonePartial,
+  ProjectPartial,
+} from "./linear";
 
 export class ColinearTreeProvider
   implements vscode.TreeDataProvider<ColinearTreeItem>, vscode.Disposable
@@ -54,6 +62,12 @@ export class ColinearTreeProvider
           "Favorites",
           vscode.TreeItemCollapsibleState.Expanded
         );
+      case "cycle":
+        return new CycleTreeItem(element.cycle);
+      case "customView":
+        return new CustomViewTreeItem(element.customView);
+      case "roadmap":
+        return new RoadmapTreeItem(element.roadmap);
       case "message":
         return new vscode.TreeItem(
           element.message,
@@ -121,15 +135,9 @@ export class ColinearTreeProvider
           });
         }
         case "myIssues": {
-          return this.linear.myIssues().then((issues) =>
-            issues
-              ? issues.map((issue) => ({
-                  type: "issue",
-                  issue,
-                  parent: element,
-                }))
-              : []
-          );
+          return this.linear
+            .myIssues()
+            .then((issues) => computeIssueList(issues, element));
         }
         case "favorites": {
           return this.linear.favorites().then((favorites) =>
@@ -148,6 +156,41 @@ export class ColinearTreeProvider
                         return {
                           type: "project",
                           project: favorite.project!,
+                          parent: element,
+                        };
+                      }
+                      case "predefinedView": {
+                        switch (favorite.predefinedViewType) {
+                          case "activeCycle": {
+                            const cycle =
+                              favorite.predefinedViewTeam!.activeCycle;
+                            return {
+                              type: "cycle",
+                              cycle,
+                              parent: element,
+                            };
+                          }
+                        }
+                        return undefined;
+                      }
+                      case "customView": {
+                        return {
+                          type: "customView",
+                          customView: favorite.customView!,
+                          parent: element,
+                        };
+                      }
+                      case "cycle": {
+                        return {
+                          type: "cycle",
+                          cycle: favorite.cycle!,
+                          parent: element,
+                        };
+                      }
+                      case "roadmap": {
+                        return {
+                          type: "roadmap",
+                          roadmap: favorite.roadmap!,
                           parent: element,
                         };
                       }
@@ -200,23 +243,47 @@ export class ColinearTreeProvider
           ];
         }
         case "milestone": {
-          return element.milestone.issues.nodes.map((issue) => ({
-            type: "issue",
-            issue,
-            parent: element,
-          }));
+          const issues = element.milestone.issues.nodes;
+          return computeIssueList(issues, element);
         }
         case "noMilestone": {
           const issues = await this.linear.noMilestoneIssues(
             element.project.id
           );
-          return issues
-            ? issues.map((issue) => ({
-                type: "issue",
-                issue,
-                parent: element,
-              }))
-            : [];
+          return computeIssueList(issues, element);
+        }
+        case "cycle": {
+          const issues = await this.linear.cycleIssues(element.cycle.id);
+          return computeIssueList(issues, element);
+        }
+        case "customView": {
+          const type = element.customView.modelName.toLowerCase();
+          switch (type) {
+            case "issue": {
+              const issues = await this.linear.customViewIssues(
+                element.customView.id
+              );
+              return computeIssueList(issues, element);
+            }
+            case "project": {
+              // LIN-18880
+              return [
+                {
+                  type: "message",
+                  message: "Custom view for projects not supported yet",
+                  parent: element,
+                },
+              ];
+            }
+          }
+          break;
+        }
+        case "roadmap": {
+          element.type;
+          const projects = await this.linear.roadmapProjects(
+            element.roadmap.id
+          );
+          return computeProjectList(projects, element);
         }
       }
     }
@@ -238,4 +305,47 @@ export class ColinearTreeProvider
   dispose() {
     this._disposables.forEach((dispose) => dispose.dispose());
   }
+}
+
+function computeIssueList(
+  issues: IssuePartial[] | undefined,
+  parent: ColinearTreeItem
+): ColinearTreeItem[] {
+  if (!issues || issues.length === 0) {
+    return [
+      {
+        type: "message",
+        message: "No issues",
+        parent,
+      },
+    ];
+  }
+  return issues
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((issue) => ({
+      type: "issue",
+      issue,
+      parent,
+    }));
+}
+function computeProjectList(
+  projects: ProjectPartial[] | undefined,
+  parent: ColinearTreeItem
+): ColinearTreeItem[] {
+  if (!projects || projects.length === 0) {
+    return [
+      {
+        type: "message",
+        message: "No projects",
+        parent,
+      },
+    ];
+  }
+  return projects
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((project) => ({
+      type: "project",
+      project,
+      parent,
+    }));
 }

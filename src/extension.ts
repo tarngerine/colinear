@@ -1,7 +1,11 @@
 import * as vscode from "vscode";
 import { LinearClient } from "@linear/sdk";
 import { Git } from "./git";
-import { AttachmentTreeItem, IssueTreeItem } from "./items";
+import {
+  AttachmentTreeItem,
+  IssueTreeItem,
+  ProjectIssuesTreeItem,
+} from "./items";
 import { ColinearTreeProvider } from "./tree";
 import { Linear } from "./linear";
 
@@ -61,6 +65,12 @@ export function activate(context: vscode.ExtensionContext) {
         "colinear.attachment.open",
         (attachment: AttachmentTreeItem) => {
           vscode.env.openExternal(vscode.Uri.parse(attachment.attachment.url));
+        }
+      ),
+      vscode.commands.registerCommand(
+        "colinear.project.open",
+        (project: ProjectIssuesTreeItem) => {
+          vscode.env.openExternal(vscode.Uri.parse(project.project.url));
         }
       ),
     ];

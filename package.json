@@ -32,6 +32,11 @@
         "command": "colinear.attachment.open",
         "title": "Colinear: Open attachment in Linear",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "colinear.project.open",
+        "title": "Colinear: Open project in Linear",
+        "icon": "$(link-external)"
       }
     ],
     "viewsContainers": {
@@ -73,6 +78,11 @@
         {
           "command": "colinear.attachment.open",
           "when": "view == colinearTree && viewItem == attachment",
+          "group": "inline"
+        },
+        {
+          "command": "colinear.project.open",
+          "when": "view == colinearTree && viewItem == project",
           "group": "inline"
         }
       ]
