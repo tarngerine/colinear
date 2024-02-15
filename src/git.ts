@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { GitExtension } from "./types.d/git";
+import { GitErrorCodes, GitExtension } from "./types.d/git";
 
 // Uses the built-in vscode.git extension to manage git
 export class Git {
@@ -63,15 +63,40 @@ export class Git {
       }
       const base = selection.label;
 
-      await git?.repositories[0]?.checkout(base);
+      console.log("base", base);
+      try {
+        await git?.repositories[0]?.checkout(base);
+      } catch (e) {
+        console.error(e);
+        const error = e as GitError;
+        vscode.window.showErrorMessage(
+          `Failed to checkout ${base}: ${error.gitErrorCode}\n${error.stderr}`
+        );
+        return;
+      }
       vscode.window.showInformationMessage(
         `Creating new branch ${branchName} from ${base}`
       );
       vscode.window.showInformationMessage(`Creating new branch ${branchName}`);
-      await git?.repositories[0]?.createBranch(branchName, true);
+      try {
+        await git?.repositories[0]?.createBranch(branchName, true);
+      } catch (e) {
+        console.error(e);
+        const error = e as GitError;
+        vscode.window.showErrorMessage(
+          `Failed to create new branch ${branchName}: ${error.gitErrorCode}\n${error.stderr}`
+        );
+        return;
+      }
       vscode.window.showInformationMessage(
         `Created and checked out ${Git.branchName}`
       );
     }
   }
 }
+
+type GitError = {
+  gitErrorCode: GitErrorCodes;
+  gitCommand: string;
+  stderr: string;
+};
