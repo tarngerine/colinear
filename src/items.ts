@@ -9,7 +9,6 @@ import {
   RoadmapPartial,
 } from "./linear";
 import { DocumentHelper } from "./helpers/DocumentHelper";
-import { Item } from "./items/Item";
 
 export type ColinearTreeItem =
   | {
