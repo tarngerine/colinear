@@ -117,6 +117,14 @@
           "highContrast": "#0f783c",
           "highContrastLight": "#0f783c"
         }
+      },
+      {
+        "id": "linear.issue.backlog",
+        "description": "Color for Linear issue status: Done",
+        "defaults": {
+          "dark": "#FFFFFF66",
+          "light": "#00000066"
+        }
       }
     ]
   },

@@ -5,6 +5,7 @@ import {
   ProjectPartial,
   ProjectMilestonePartial,
 } from "./linear";
+import { DocumentHelper } from "./helpers/DocumentHelper";
 
 export type ColinearTreeItem = {
   parent?: ColinearTreeItem;
@@ -95,13 +96,22 @@ export class IssueTreeItem extends BaseTreeItem {
         : "";
     super(issue.title, idPrefix + issue.id, collapsed);
     this.description = issue.identifier;
+    this.tooltip =
+      `${issue.title}` +
+      "\n" +
+      `${[issue.state.name, issue.assignee?.displayName]
+        .filter(Boolean)
+        .join(" · ")}`;
+
     if (issue.description) {
-      this.tooltip = issue.description;
+      this.tooltip +=
+        "\n----------\n" + DocumentHelper.sanitizeMarkdown(issue.description);
     }
 
     const githubAttachment = issue.attachments.nodes.find(
       (attachment) => attachment.sourceType === "github"
     );
+    const isBacklog = issue.state.name === "Backlog";
     const isInReview = githubAttachment?.metadata.status === "inReview";
     const isReadytoMerge = githubAttachment?.metadata.reviews?.find(
       (review: any) => review.state === "approved"
@@ -132,7 +142,10 @@ export class IssueTreeItem extends BaseTreeItem {
         break;
       }
       default: {
-        this.iconPath = new vscode.ThemeIcon("circle-large-outline");
+        this.iconPath = new vscode.ThemeIcon(
+          "circle-large-outline",
+          isBacklog ? new vscode.ThemeColor("linear.issue.backlog") : undefined
+        );
         break;
       }
     }

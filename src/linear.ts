@@ -5,6 +5,7 @@ import {
   LinearClient,
   Project,
   ProjectMilestone,
+  User,
   WorkflowState,
 } from "@linear/sdk";
 
@@ -83,9 +84,16 @@ export class Linear {
 
 export type IssuePartial = Pick<
   Issue,
-  "id" | "title" | "url" | "identifier" | "description" | "branchName"
+  | "id"
+  | "title"
+  | "url"
+  | "identifier"
+  | "description"
+  | "branchName"
+  | "sortOrder"
 > & {
-  state: WorkflowState;
+  assignee: Pick<User, "displayName">;
+  state: Pick<WorkflowState, "type" | "name">;
   attachments: {
     nodes: Pick<Attachment, "title" | "url" | "sourceType" | "metadata">[];
   };
@@ -98,8 +106,13 @@ const issueQueryFragment = `
   identifier,
   branchName,
   description,
+  sortOrder,
+  assignee {
+    displayName
+  },
   state {
-    type
+    type,
+    name
   }
   attachments {
     nodes {
