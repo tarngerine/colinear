@@ -63,7 +63,6 @@ export class Git {
       }
       const base = selection.label;
 
-      console.log("base", base);
       try {
         await git?.repositories[0]?.checkout(base);
       } catch (e) {
