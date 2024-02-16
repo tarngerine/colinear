@@ -55,6 +55,18 @@ export function activate(context: vscode.ExtensionContext) {
           provider.refresh();
         }
       ),
+      vscode.window.registerUriHandler({
+        handleUri: async (uri) => {
+          switch (true) {
+            // vscode://Linear.linear/checkout/branch/name
+            case uri.path.startsWith("/checkout"): {
+              const branchName = uri.path.split("/").slice(2).join("/");
+              await Git.checkout(branchName);
+              provider.refresh(provider.root.currentBranch);
+            }
+          }
+        },
+      }),
       vscode.commands.registerCommand(
         "colinear.issue.open",
         (issue: IssueTreeItem) => {

@@ -1,5 +1,6 @@
 {
-  "name": "colinear",
+  "publisher": "Linear",
+  "name": "linear",
   "displayName": "colinear",
   "description": "something",
   "version": "0.0.1",
@@ -9,8 +10,10 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
   "main": "./dist/extension.js",
+  "activationEvents": [
+    "onUri"
+  ],
   "contributes": {
     "commands": [
       {
