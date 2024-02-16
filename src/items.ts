@@ -9,6 +9,7 @@ import {
   RoadmapPartial,
 } from "./linear";
 import { DocumentHelper } from "./helpers/DocumentHelper";
+import { Git } from "./git";
 
 export type ColinearTreeItem =
   | {
@@ -16,7 +17,6 @@ export type ColinearTreeItem =
     } & (
       | {
           type: "currentBranch";
-          branchName?: string;
         }
       | {
           type: "myIssues";
@@ -77,9 +77,9 @@ class BaseTreeItem extends vscode.TreeItem {
 }
 
 export class CurrentBranchTreeItem extends BaseTreeItem {
-  constructor(public readonly branchName: string | undefined) {
+  constructor() {
     super(
-      branchName ?? "Current issue",
+      Git.branchName ?? "Current branch",
       "current-branch",
       vscode.TreeItemCollapsibleState.Expanded
     );

@@ -36,7 +36,7 @@ export class ColinearTreeProvider
   getTreeItem(element: ColinearTreeItem): vscode.TreeItem {
     switch (element.type) {
       case "currentBranch":
-        return new CurrentBranchTreeItem(element.branchName);
+        return new CurrentBranchTreeItem();
       case "myIssues":
         return new MyIssuesTreeItem(element.viewer);
       case "issue":
@@ -76,6 +76,17 @@ export class ColinearTreeProvider
     }
   }
 
+  /**
+   * Items for the root of the tree
+   * Defined here so that they can be referenced externally for targeted refreshing
+   */
+  public root: Record<"currentBranch" | "favorites", ColinearTreeItem> = {
+    currentBranch: {
+      type: "currentBranch",
+    },
+    favorites: { type: "favorites" },
+  };
+
   async getChildren(element?: ColinearTreeItem): Promise<ColinearTreeItem[]> {
     if (!this.linear) {
       vscode.window.showInformationMessage("Not logged in to Linear");
@@ -86,15 +97,12 @@ export class ColinearTreeProvider
     if (!element) {
       console.log("ROOT");
       return [
-        {
-          type: "currentBranch",
-          branchName: Git.branchName,
-        },
+        this.root.currentBranch,
         {
           type: "myIssues",
           viewer: await this.linear.viewer(),
         },
-        { type: "favorites" },
+        this.root.favorites,
       ];
     }
 
