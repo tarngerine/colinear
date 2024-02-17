@@ -1,14 +1,24 @@
 import * as vscode from "vscode";
 import { GitErrorCodes, GitExtension } from "./types.d/git";
 
-// Uses the built-in vscode.git extension to manage git
+/**
+ * Uses the built-in vscode.git extension to manage git
+ */
 export class Git {
-  public static get extension(): vscode.Extension<GitExtension> | undefined {
+  private static get extension(): vscode.Extension<GitExtension> | undefined {
     return vscode.extensions.getExtension<GitExtension>("vscode.git");
   }
+
+  /**
+   * Whether the vscode.git extension is loaded
+   */
   public static get isLoaded(): boolean {
     return this.extension !== undefined;
   }
+
+  /**
+   * The current branch name
+   */
   public static get branchName(): string | undefined {
     if (!this.isLoaded) {
       return;
@@ -17,6 +27,11 @@ export class Git {
     const branchName = git?.repositories[0]?.state.HEAD?.name;
     return branchName;
   }
+
+  /**
+   * Checkout a branch, showing a quick pick to select the base branch
+   * @param branchName The name of the branch to checkout
+   */
   public static async checkout(branchName: string) {
     if (!this.isLoaded) {
       vscode.window.showErrorMessage(

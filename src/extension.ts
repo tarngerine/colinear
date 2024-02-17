@@ -1,11 +1,7 @@
 import * as vscode from "vscode";
 import { LinearClient } from "@linear/sdk";
 import { Git } from "./git";
-import {
-  AttachmentTreeItem,
-  IssueTreeItem,
-  ProjectIssuesTreeItem,
-} from "./items";
+import { AttachmentTreeItem, IssueTreeItem, ProjectTreeItem } from "./items";
 import { ColinearTreeProvider } from "./tree";
 import { Linear } from "./linear";
 
@@ -51,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
             );
             return;
           }
-          await Git.checkout(issue.issue.branchName);
+          await Git.checkout(issue.props.issue.branchName);
           provider.refresh();
         }
       ),
@@ -70,19 +66,21 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.registerCommand(
         "colinear.issue.open",
         (issue: IssueTreeItem) => {
-          vscode.env.openExternal(vscode.Uri.parse(issue.issue.url));
+          vscode.env.openExternal(vscode.Uri.parse(issue.props.issue.url));
         }
       ),
       vscode.commands.registerCommand(
         "colinear.attachment.open",
         (attachment: AttachmentTreeItem) => {
-          vscode.env.openExternal(vscode.Uri.parse(attachment.attachment.url));
+          vscode.env.openExternal(
+            vscode.Uri.parse(attachment.props.attachment.url)
+          );
         }
       ),
       vscode.commands.registerCommand(
         "colinear.project.open",
-        (project: ProjectIssuesTreeItem) => {
-          vscode.env.openExternal(vscode.Uri.parse(project.project.url));
+        (project: ProjectTreeItem) => {
+          vscode.env.openExternal(vscode.Uri.parse(project.props.project.url));
         }
       ),
     ];

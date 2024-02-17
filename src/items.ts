@@ -13,6 +13,13 @@ import { Git } from "./git";
 
 export type ColinearTreeItem =
   | {
+      /**
+       * The unique identifier of the tree item, e.g. the model ID
+       */
+      uri: string;
+      /**
+       * The parent of the tree item
+       */
       parent?: ColinearTreeItem;
     } & (
       | {
@@ -66,21 +73,28 @@ export type ColinearTreeItem =
 class BaseTreeItem extends vscode.TreeItem {
   constructor(
     label: string,
-    id: string,
+    props: ColinearTreeItem,
     collapsed?: vscode.TreeItemCollapsibleState
   ) {
     super(label, collapsed ?? vscode.TreeItemCollapsibleState.Collapsed);
-    if (id) {
-      this.id = id;
-    }
+    this.id = getFullURI(props);
   }
 }
 
+/**
+ * Recursively calls up parent tree items to build the full URI
+ */
+function getFullURI(item: ColinearTreeItem): string {
+  return item.parent ? getFullURI(item.parent) + "/" + item.uri : item.uri;
+}
+
 export class CurrentBranchTreeItem extends BaseTreeItem {
-  constructor() {
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "currentBranch" }>
+  ) {
     super(
       Git.branchName ?? "Current branch",
-      "current-branch",
+      props,
       vscode.TreeItemCollapsibleState.Expanded
     );
     this.iconPath = new vscode.ThemeIcon("git-branch");
@@ -89,30 +103,30 @@ export class CurrentBranchTreeItem extends BaseTreeItem {
 }
 
 export class MyIssuesTreeItem extends BaseTreeItem {
-  constructor(public readonly viewer: User) {
-    super("My issues", "my-issues", vscode.TreeItemCollapsibleState.Expanded);
-    if (viewer.avatarUrl) {
-      this.iconPath = vscode.Uri.parse(viewer.avatarUrl);
-    }
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "myIssues" }>
+  ) {
+    const { viewer } = props;
+    super("My issues", props, vscode.TreeItemCollapsibleState.Expanded);
+    this.iconPath = viewer.avatarUrl
+      ? vscode.Uri.parse(viewer.avatarUrl)
+      : new vscode.ThemeIcon("account");
   }
   contextValue = "myIssues";
 }
 
 export class IssueTreeItem extends BaseTreeItem {
   constructor(
-    public readonly issue: IssuePartial,
-    public readonly parent?: ColinearTreeItem,
-    collapsed?: vscode.TreeItemCollapsibleState
+    public readonly props: Extract<ColinearTreeItem, { type: "issue" }>
   ) {
-    const idPrefix =
-      parent?.type === "milestone"
-        ? parent.milestone.id
-        : parent?.type === "cycle"
-        ? parent.cycle.id
+    const { issue, parent } = props;
+    const collapsed =
+      issue.attachments.nodes.length === 0
+        ? vscode.TreeItemCollapsibleState.None
         : parent?.type === "currentBranch"
-        ? "currentBranch"
-        : "";
-    super(issue.title, idPrefix + issue.id, collapsed);
+        ? vscode.TreeItemCollapsibleState.Expanded
+        : vscode.TreeItemCollapsibleState.Collapsed;
+    super(issue.title, props, collapsed);
     this.description = issue.identifier;
     this.tooltip =
       `${issue.title}` +
@@ -172,12 +186,11 @@ export class IssueTreeItem extends BaseTreeItem {
 }
 
 export class AttachmentTreeItem extends BaseTreeItem {
-  constructor(public readonly attachment: Attachment) {
-    super(
-      attachment.title,
-      attachment.id,
-      vscode.TreeItemCollapsibleState.None
-    );
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "attachment" }>
+  ) {
+    const { attachment } = props;
+    super(attachment.title, props, vscode.TreeItemCollapsibleState.None);
     this.description = attachment.sourceType;
 
     switch (attachment.sourceType) {
@@ -242,9 +255,12 @@ export class AttachmentTreeItem extends BaseTreeItem {
   contextValue = "attachment";
 }
 
-export class ProjectIssuesTreeItem extends BaseTreeItem {
-  constructor(public readonly project: ProjectPartial) {
-    super(project.name, project.id);
+export class ProjectTreeItem extends BaseTreeItem {
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "project" }>
+  ) {
+    const { project } = props;
+    super(project.name, props);
     this.description = Math.round(project.progress * 100) + "%";
   }
   iconPath = new vscode.ThemeIcon("archive");
@@ -252,53 +268,70 @@ export class ProjectIssuesTreeItem extends BaseTreeItem {
 }
 
 export class MilestoneTreeItem extends BaseTreeItem {
-  constructor(public readonly milestone: ProjectMilestonePartial) {
-    super(milestone.name, milestone.id);
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "milestone" }>
+  ) {
+    const { milestone } = props;
+    super(milestone.name, props);
     this.description = String(milestone.issues.nodes.length);
   }
   contextValue = "milestone";
 }
 
 export class NoMilestoneTreeItem extends BaseTreeItem {
-  constructor(public readonly project: ProjectPartial) {
-    super("No milestone", project.id + "-noMilestone");
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "noMilestone" }>
+  ) {
+    super("No milestone", props);
   }
   contextValue = "noMilestone";
 }
 
 export class CycleTreeItem extends BaseTreeItem {
-  constructor(public readonly cycle: CyclePartial) {
-    super(cycle.name ?? String(cycle.number), cycle.id);
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "cycle" }>
+  ) {
+    const { cycle } = props;
+    super(cycle.name ?? String(cycle.number), props);
   }
   iconPath = new vscode.ThemeIcon("play-circle");
   contextValue = "cycle";
 }
 
 export class CustomViewTreeItem extends BaseTreeItem {
-  constructor(public readonly customView: CustomViewPartial) {
-    super(customView.name, customView.id);
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "customView" }>
+  ) {
+    const { customView } = props;
+    super(customView.name, props);
   }
   iconPath = new vscode.ThemeIcon("list-filter");
   contextValue = "customView";
 }
 
 export class RoadmapTreeItem extends BaseTreeItem {
-  constructor(public readonly roadmap: RoadmapPartial) {
-    super(roadmap.name, roadmap.id);
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "roadmap" }>
+  ) {
+    const { roadmap } = props;
+    super(roadmap.name, props);
   }
   iconPath = new vscode.ThemeIcon("milestone");
 }
 
-export class RefreshTreeItem extends vscode.TreeItem {
-  constructor() {
-    super("Refresh", vscode.TreeItemCollapsibleState.None);
-  }
-}
-
+/**
+ * Displays an icon on the right side of tree items
+ * You must call `ItemDecorationProvider.setDecoration` to set the decoration from the tree item
+ */
 class DecorationProvider
   implements vscode.FileDecorationProvider, vscode.Disposable
 {
   private _store: Map<string, vscode.FileDecoration> = new Map();
+  /**
+   * Set a decoration for a tree item
+   * @param uri The URI of the tree item
+   * @param decoration The decoration to set, can't be more than 1 character long if you use a string
+   */
   public setDecoration(uri: vscode.Uri, decoration: vscode.FileDecoration) {
     this._store.set(uri.path, decoration);
     this._onDidChangeFileDecorations.fire(uri);

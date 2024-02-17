@@ -8,7 +8,7 @@ import {
   MilestoneTreeItem,
   MyIssuesTreeItem,
   NoMilestoneTreeItem,
-  ProjectIssuesTreeItem,
+  ProjectTreeItem,
   CycleTreeItem,
   CustomViewTreeItem,
   RoadmapTreeItem,
@@ -36,38 +36,30 @@ export class ColinearTreeProvider
   getTreeItem(element: ColinearTreeItem): vscode.TreeItem {
     switch (element.type) {
       case "currentBranch":
-        return new CurrentBranchTreeItem();
+        return new CurrentBranchTreeItem(element);
       case "myIssues":
-        return new MyIssuesTreeItem(element.viewer);
+        return new MyIssuesTreeItem(element);
       case "issue":
-        return new IssueTreeItem(
-          element.issue,
-          element.parent,
-          element.issue.attachments.nodes.length === 0
-            ? vscode.TreeItemCollapsibleState.None
-            : element.parent?.type === "currentBranch"
-            ? vscode.TreeItemCollapsibleState.Expanded
-            : vscode.TreeItemCollapsibleState.Collapsed
-        );
+        return new IssueTreeItem(element);
       case "attachment":
-        return new AttachmentTreeItem(element.attachment);
+        return new AttachmentTreeItem(element);
       case "project":
-        return new ProjectIssuesTreeItem(element.project);
+        return new ProjectTreeItem(element);
       case "milestone":
-        return new MilestoneTreeItem(element.milestone);
+        return new MilestoneTreeItem(element);
       case "noMilestone":
-        return new NoMilestoneTreeItem(element.project);
+        return new NoMilestoneTreeItem(element);
       case "favorites":
         return new vscode.TreeItem(
           "Favorites",
           vscode.TreeItemCollapsibleState.Expanded
         );
       case "cycle":
-        return new CycleTreeItem(element.cycle);
+        return new CycleTreeItem(element);
       case "customView":
-        return new CustomViewTreeItem(element.customView);
+        return new CustomViewTreeItem(element);
       case "roadmap":
-        return new RoadmapTreeItem(element.roadmap);
+        return new RoadmapTreeItem(element);
       case "message":
         return new vscode.TreeItem(
           element.message,
@@ -83,8 +75,9 @@ export class ColinearTreeProvider
   public root: Record<"currentBranch" | "favorites", ColinearTreeItem> = {
     currentBranch: {
       type: "currentBranch",
+      uri: "currentBranch",
     },
-    favorites: { type: "favorites" },
+    favorites: { type: "favorites", uri: "favorites" },
   };
 
   async getChildren(element?: ColinearTreeItem): Promise<ColinearTreeItem[]> {
@@ -95,11 +88,11 @@ export class ColinearTreeProvider
 
     // Root
     if (!element) {
-      console.log("ROOT");
       return [
         this.root.currentBranch,
         {
           type: "myIssues",
+          uri: "myIssues",
           viewer: await this.linear.viewer(),
         },
         this.root.favorites,
@@ -118,6 +111,7 @@ export class ColinearTreeProvider
             return [
               {
                 type: "message",
+                uri: "loadingCurrentBranch",
                 message: "Loading current branch...",
                 parent: element,
               },
@@ -128,6 +122,7 @@ export class ColinearTreeProvider
               return [
                 {
                   type: "message",
+                  uri: "noMatchingIssue",
                   message: "No matching Linear issue for branch",
                   parent: element,
                 },
@@ -137,6 +132,7 @@ export class ColinearTreeProvider
               {
                 type: "issue",
                 issue,
+                uri: issue.id,
                 parent: element,
               },
             ];
@@ -157,6 +153,7 @@ export class ColinearTreeProvider
                         return {
                           type: "issue",
                           issue: favorite.issue!,
+                          uri: favorite.issue!.id,
                           parent: element,
                         };
                       }
@@ -164,6 +161,7 @@ export class ColinearTreeProvider
                         return {
                           type: "project",
                           project: favorite.project!,
+                          uri: favorite.project!.id,
                           parent: element,
                         };
                       }
@@ -175,6 +173,7 @@ export class ColinearTreeProvider
                             return {
                               type: "cycle",
                               cycle,
+                              uri: cycle.id,
                               parent: element,
                             };
                           }
@@ -185,6 +184,7 @@ export class ColinearTreeProvider
                         return {
                           type: "customView",
                           customView: favorite.customView!,
+                          uri: favorite.customView!.id,
                           parent: element,
                         };
                       }
@@ -192,6 +192,7 @@ export class ColinearTreeProvider
                         return {
                           type: "cycle",
                           cycle: favorite.cycle!,
+                          uri: favorite.cycle!.id,
                           parent: element,
                         };
                       }
@@ -199,6 +200,7 @@ export class ColinearTreeProvider
                         return {
                           type: "roadmap",
                           roadmap: favorite.roadmap!,
+                          uri: favorite.roadmap!.id,
                           parent: element,
                         };
                       }
@@ -218,6 +220,7 @@ export class ColinearTreeProvider
                 type: "attachment",
                 attachment,
                 parent: element,
+                uri: attachment.id,
               } as ColinearTreeItem)
           );
           return [...attachments];
@@ -240,6 +243,7 @@ export class ColinearTreeProvider
                 ({
                   type: "milestone",
                   milestone,
+                  uri: milestone.id,
                   parent: element,
                 } as ColinearTreeItem)
             ),
@@ -247,6 +251,7 @@ export class ColinearTreeProvider
               type: "noMilestone",
               project: element.project,
               parent: element,
+              uri: "noMilestone",
             },
           ];
         }
@@ -278,6 +283,7 @@ export class ColinearTreeProvider
               return [
                 {
                   type: "message",
+                  uri: "customViewProjectsNotSupported",
                   message: "Custom view for projects not supported yet",
                   parent: element,
                 },
@@ -325,6 +331,7 @@ function computeIssueList(
         type: "message",
         message: "No issues",
         parent,
+        uri: "noIssues",
       },
     ];
   }
@@ -334,6 +341,7 @@ function computeIssueList(
       type: "issue",
       issue,
       parent,
+      uri: issue.id,
     }));
 }
 function computeProjectList(
@@ -346,6 +354,7 @@ function computeProjectList(
         type: "message",
         message: "No projects",
         parent,
+        uri: "noProjects",
       },
     ];
   }
@@ -355,5 +364,6 @@ function computeProjectList(
       type: "project",
       project,
       parent,
+      uri: project.id,
     }));
 }
