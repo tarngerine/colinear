@@ -1,91 +1,98 @@
 import * as vscode from "vscode";
 import { LinearClient } from "@linear/sdk";
 import { Git } from "./git";
-import { AttachmentTreeItem, IssueTreeItem, ProjectTreeItem } from "./items";
+import { ColinearTreeItem } from "./items";
 import { ColinearTreeProvider } from "./tree";
 import { Linear } from "./linear";
+import { SessionHelper } from "./helpers/SessionHelper";
 
-export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "colinear" is now active!');
+export async function activate(context: vscode.ExtensionContext) {
+  console.log('Congratulations, your extension "linear" is now active!');
+  context.subscriptions.push(
+    vscode.commands.registerCommand("colinear.login", async () => {
+      load(context);
+    })
+  );
+  load(context);
+}
 
-  (async () => {
-    const session = await vscode.authentication.getSession(
-      "linear", // Linear VS Code authentication provider ID
-      ["read"], // OAuth scopes we're requesting
-      { createIfNone: true }
-    );
+async function load(context: vscode.ExtensionContext) {
+  const session = await SessionHelper.getSessionOrLogIn();
 
-    if (!session) {
-      vscode.window.showErrorMessage(
-        `We weren't able to log you into Linear when trying to open the issue.`
-      );
-      return;
-    }
+  if (!session) {
+    return;
+  }
 
-    // We wrap the Linear SDK with our own class to add our own graphql queries
-    const linearClient = new Linear(
-      new LinearClient({
-        accessToken: session.accessToken,
-      })
-    );
+  // We wrap the Linear SDK with our own class to add our own graphql queries
+  const linearClient = new Linear(
+    new LinearClient({
+      accessToken: session.accessToken,
+    })
+  );
 
-    // Create tree
-    const provider = new ColinearTreeProvider(linearClient, context);
-    vscode.window.registerTreeDataProvider("colinearTree", provider);
+  // TODO: populate/store initial cache for my issues, favorites, current branch and call refresh so the tree can render immediately
+  const viewer = await linearClient.viewer();
+  const provider = new ColinearTreeProvider(linearClient, viewer, context);
+  const tree = vscode.window.createTreeView("colinearTree", {
+    treeDataProvider: provider,
+  });
+  const treeDisposable = {
+    dispose: () => {
+      tree.dispose();
+      provider.dispose();
+    },
+  };
 
-    // Create commands
-    const disposables = [
-      vscode.commands.registerCommand("colinear.refresh", async () => {
-        provider.refresh();
-      }),
-      vscode.commands.registerCommand(
-        "colinear.issue.checkout",
-        async (issue: IssueTreeItem) => {
-          if (!Git.isLoaded) {
-            vscode.window.showErrorMessage(
-              "vscode.git extension not loaded yet. Try again in a few seconds"
-            );
-            return;
-          }
-          await Git.checkout(issue.props.issue.branchName);
-          provider.refresh();
-        }
-      ),
-      vscode.window.registerUriHandler({
-        handleUri: async (uri) => {
-          switch (true) {
-            // vscode://Linear.linear/checkout/branch/name
-            case uri.path.startsWith("/checkout"): {
-              const branchName = uri.path.split("/").slice(2).join("/");
-              await Git.checkout(branchName);
-              provider.refresh(provider.root.currentBranch);
-            }
-          }
-        },
-      }),
-      vscode.commands.registerCommand(
-        "colinear.issue.open",
-        (issue: IssueTreeItem) => {
-          vscode.env.openExternal(vscode.Uri.parse(issue.props.issue.url));
-        }
-      ),
-      vscode.commands.registerCommand(
-        "colinear.attachment.open",
-        (attachment: AttachmentTreeItem) => {
-          vscode.env.openExternal(
-            vscode.Uri.parse(attachment.props.attachment.url)
+  context.subscriptions.push(
+    treeDisposable,
+    vscode.commands.registerCommand("colinear.logout", async () => {
+      await SessionHelper.logout();
+      treeDisposable.dispose();
+    }),
+    vscode.commands.registerCommand(
+      "colinear.issue.checkout",
+      async (item: Extract<ColinearTreeItem, { type: "issue" }>) => {
+        if (!Git.isLoaded) {
+          vscode.window.showErrorMessage(
+            "vscode.git extension not loaded yet. Try again in a few seconds"
           );
+          return;
         }
-      ),
-      vscode.commands.registerCommand(
-        "colinear.project.open",
-        (project: ProjectTreeItem) => {
-          vscode.env.openExternal(vscode.Uri.parse(project.props.project.url));
+        await Git.checkout(item.issue.branchName);
+        provider.refresh();
+      }
+    ),
+    vscode.window.registerUriHandler({
+      handleUri: async (uri) => {
+        switch (true) {
+          // vscode://Linear.linear/checkout/branch/name
+          case uri.path.startsWith("/checkout"): {
+            const branchName = uri.path.split("/").slice(2).join("/");
+            await Git.checkout(branchName);
+            provider.refresh(provider.root.currentBranch);
+          }
         }
-      ),
-    ];
-    disposables.forEach((disposable) => context.subscriptions.push(disposable));
-  })();
+      },
+    }),
+    vscode.commands.registerCommand(
+      "colinear.issue.open",
+      (item: Extract<ColinearTreeItem, { type: "issue" }>) => {
+        vscode.env.openExternal(vscode.Uri.parse(item.issue.url));
+      }
+    ),
+    vscode.commands.registerCommand(
+      "colinear.attachment.open",
+      (item: Extract<ColinearTreeItem, { type: "attachment" }>) => {
+        vscode.env.openExternal(vscode.Uri.parse(item.attachment.url));
+      }
+    ),
+    vscode.commands.registerCommand(
+      "colinear.project.open",
+      (item: Extract<ColinearTreeItem, { type: "project" }>) => {
+        vscode.env.openExternal(vscode.Uri.parse(item.project.url));
+      }
+    )
+  );
 }
 
 // This method is called when your extension is deactivated

@@ -17,6 +17,16 @@
   "contributes": {
     "commands": [
       {
+        "command": "colinear.login",
+        "title": "Colinear: Log in",
+        "icon": "$(key)"
+      },
+      {
+        "command": "colinear.logout",
+        "title": "Colinear: Log out",
+        "icon": "$(key)"
+      },
+      {
         "command": "colinear.refresh",
         "title": "Colinear: Refresh",
         "icon": "$(refresh)"
@@ -59,7 +69,29 @@
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "colinearTree",
+        "contents": "Log in to get started\n[Log in with Linear](command:colinear.login)",
+        "when": "linear.hasCheckedSession && !linear.hasSession"
+      },
+      {
+        "view": "colinearTree",
+        "contents": "Loading...",
+        "when": "linear.hasSession || !linear.hasCheckedSession"
+      }
+    ],
     "menus": {
+      "commandPalette": [
+        {
+          "command": "colinear.login",
+          "when": "!linear.hasSession"
+        },
+        {
+          "command": "colinear.logout",
+          "when": "linear.hasSession"
+        }
+      ],
       "view/title": [
         {
           "command": "colinear.refresh",

@@ -20,16 +20,22 @@ import {
   ProjectMilestonePartial,
   ProjectPartial,
 } from "./linear";
+import { ContextHelper } from "./helpers/ContextHelper";
+import { User } from "@linear/sdk";
 
 export class ColinearTreeProvider
   implements vscode.TreeDataProvider<ColinearTreeItem>, vscode.Disposable
 {
   constructor(
     private linear: Linear,
+    private readonly viewer: User,
     private context: vscode.ExtensionContext
   ) {
     this._disposables.push(
-      vscode.window.registerFileDecorationProvider(ItemDecorationProvider)
+      vscode.window.registerFileDecorationProvider(ItemDecorationProvider),
+      vscode.commands.registerCommand("colinear.refresh", async () => {
+        this.refresh();
+      })
     );
   }
 
@@ -81,11 +87,7 @@ export class ColinearTreeProvider
   };
 
   async getChildren(element?: ColinearTreeItem): Promise<ColinearTreeItem[]> {
-    if (!this.linear) {
-      vscode.window.showInformationMessage("Not logged in to Linear");
-      return [];
-    }
-
+    console.log("getChildren", element);
     // Root
     if (!element) {
       return [
@@ -93,7 +95,7 @@ export class ColinearTreeProvider
         {
           type: "myIssues",
           uri: "myIssues",
-          viewer: await this.linear.viewer(),
+          viewer: this.viewer,
         },
         this.root.favorites,
       ];
