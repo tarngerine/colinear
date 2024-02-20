@@ -195,6 +195,7 @@ export class AttachmentTreeItem extends BaseTreeItem {
 
     switch (attachment.sourceType) {
       case "github": {
+        this.description = "GitHub";
         this.iconPath = new vscode.ThemeIcon("github");
         this.resourceUri = vscode.Uri.parse(attachment.url);
         const isApproved =
@@ -238,11 +239,18 @@ export class AttachmentTreeItem extends BaseTreeItem {
         }
         break;
       }
+      case "githubCommit": {
+        this.iconPath = new vscode.ThemeIcon("git-commit");
+        this.description = "GitHub";
+        break;
+      }
       case "figma": {
+        this.description = "Figma";
         this.iconPath = new vscode.ThemeIcon("symbol-color");
         break;
       }
       case "slack": {
+        this.description = "Slack";
         this.iconPath = new vscode.ThemeIcon("comment-discussion");
         break;
       }
