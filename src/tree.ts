@@ -20,12 +20,12 @@ import {
   ProjectMilestonePartial,
   ProjectPartial,
 } from "./linear";
-import { ContextHelper } from "./helpers/ContextHelper";
 import { User } from "@linear/sdk";
 
 export class ColinearTreeProvider
   implements vscode.TreeDataProvider<ColinearTreeItem>, vscode.Disposable
 {
+  public lastKnownGitBranch: string | undefined;
   constructor(
     private linear: Linear,
     private readonly viewer: User,
@@ -58,7 +58,7 @@ export class ColinearTreeProvider
       case "favorites":
         return new vscode.TreeItem(
           "Favorites",
-          vscode.TreeItemCollapsibleState.Expanded
+          vscode.TreeItemCollapsibleState.Collapsed
         );
       case "cycle":
         return new CycleTreeItem(element);
@@ -105,7 +105,7 @@ export class ColinearTreeProvider
       switch (element.type) {
         case "currentBranch": {
           if (!Git.branchName) {
-            // Wait for the branch name to be available
+            // Wait for the vscode.git extension to be available, should be in 1s
             setTimeout(() => {
               console.log("refreshing");
               this.refresh(element);
@@ -119,6 +119,7 @@ export class ColinearTreeProvider
               },
             ];
           }
+          this.lastKnownGitBranch = Git.branchName;
           return this.linear.branchIssue(Git.branchName).then(async (issue) => {
             if (!issue) {
               return [

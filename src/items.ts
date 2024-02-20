@@ -107,7 +107,7 @@ export class MyIssuesTreeItem extends BaseTreeItem {
     public readonly props: Extract<ColinearTreeItem, { type: "myIssues" }>
   ) {
     const { viewer } = props;
-    super("My issues", props, vscode.TreeItemCollapsibleState.Expanded);
+    super("My issues", props, vscode.TreeItemCollapsibleState.Collapsed);
     this.iconPath = viewer.avatarUrl
       ? vscode.Uri.parse(viewer.avatarUrl)
       : new vscode.ThemeIcon("account");

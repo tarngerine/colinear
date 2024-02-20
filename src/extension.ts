@@ -5,6 +5,7 @@ import { ColinearTreeItem } from "./items";
 import { ColinearTreeProvider } from "./tree";
 import { Linear } from "./linear";
 import { SessionHelper } from "./helpers/SessionHelper";
+import { ServerHelper } from "./helpers/ServerHelper";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "linear" is now active!');
@@ -45,6 +46,13 @@ async function load(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     treeDisposable,
+    /** Constantly check if branch has changed via a git client */
+    ServerHelper.createLongPoll(() => {
+      if (Git.branchName === provider.lastKnownGitBranch) {
+        return;
+      }
+      provider.refresh(provider.root.currentBranch);
+    }),
     vscode.commands.registerCommand("colinear.logout", async () => {
       await SessionHelper.logout();
       treeDisposable.dispose();
