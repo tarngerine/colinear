@@ -280,6 +280,10 @@ const favoritesQuery = `
   query Favorites {
     favorites {
       nodes {
+        id
+        parent {
+          id
+        },
         sortOrder,
         type,
         predefinedViewType,
@@ -323,8 +327,9 @@ const favoritesQuery = `
 
 export type FavoritePartial = Pick<
   Favorite,
-  "sortOrder" | "type" | "folderName" | "predefinedViewType"
+  "sortOrder" | "type" | "folderName" | "predefinedViewType" | "id"
 > & {
+  parent?: { id: string };
   issue?: IssuePartial;
   project?: ProjectPartial;
   cycle?: CyclePartial;

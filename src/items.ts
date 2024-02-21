@@ -7,6 +7,7 @@ import {
   CyclePartial,
   CustomViewPartial,
   RoadmapPartial,
+  FavoritePartial,
 } from "./linear";
 import { DocumentHelper } from "./helpers/DocumentHelper";
 import { Git } from "./git";
@@ -51,6 +52,11 @@ export type ColinearTreeItem =
         }
       | {
           type: "favorites";
+        }
+      | {
+          type: "favoriteFolder";
+          name: string;
+          children: FavoritePartial[];
         }
       | {
           type: "cycle";
@@ -325,6 +331,23 @@ export class RoadmapTreeItem extends BaseTreeItem {
     super(roadmap.name, props);
   }
   iconPath = new vscode.ThemeIcon("milestone");
+}
+export class FavoritesTreeItem extends BaseTreeItem {
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "favorites" }>
+  ) {
+    super("Favorites", props, vscode.TreeItemCollapsibleState.Collapsed);
+  }
+  iconPath = new vscode.ThemeIcon("star");
+}
+export class FavoriteFolderTreeItem extends BaseTreeItem {
+  constructor(
+    public readonly props: Extract<ColinearTreeItem, { type: "favoriteFolder" }>
+  ) {
+    const { name } = props;
+    super(name, props, vscode.TreeItemCollapsibleState.Collapsed);
+  }
+  iconPath = new vscode.ThemeIcon("folder");
 }
 
 /**

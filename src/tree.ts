@@ -12,9 +12,12 @@ import {
   CycleTreeItem,
   CustomViewTreeItem,
   RoadmapTreeItem,
+  FavoriteFolderTreeItem,
+  FavoritesTreeItem,
 } from "./items";
 import { Git } from "./git";
 import {
+  FavoritePartial,
   IssuePartial,
   Linear,
   ProjectMilestonePartial,
@@ -56,10 +59,9 @@ export class ColinearTreeProvider
       case "noMilestone":
         return new NoMilestoneTreeItem(element);
       case "favorites":
-        return new vscode.TreeItem(
-          "Favorites",
-          vscode.TreeItemCollapsibleState.Collapsed
-        );
+        return new FavoritesTreeItem(element);
+      case "favoriteFolder":
+        return new FavoriteFolderTreeItem(element);
       case "cycle":
         return new CycleTreeItem(element);
       case "customView":
@@ -147,74 +149,14 @@ export class ColinearTreeProvider
             .then((issues) => computeIssueList(issues, element));
         }
         case "favorites": {
-          return this.linear.favorites().then((favorites) =>
-            favorites
-              ? favorites
-                  .map((favorite): ColinearTreeItem | undefined => {
-                    switch (favorite.type) {
-                      case "issue": {
-                        return {
-                          type: "issue",
-                          issue: favorite.issue!,
-                          uri: favorite.issue!.id,
-                          parent: element,
-                        };
-                      }
-                      case "project": {
-                        return {
-                          type: "project",
-                          project: favorite.project!,
-                          uri: favorite.project!.id,
-                          parent: element,
-                        };
-                      }
-                      case "predefinedView": {
-                        switch (favorite.predefinedViewType) {
-                          case "activeCycle": {
-                            const cycle =
-                              favorite.predefinedViewTeam!.activeCycle;
-                            return {
-                              type: "cycle",
-                              cycle,
-                              uri: cycle.id,
-                              parent: element,
-                            };
-                          }
-                        }
-                        return undefined;
-                      }
-                      case "customView": {
-                        return {
-                          type: "customView",
-                          customView: favorite.customView!,
-                          uri: favorite.customView!.id,
-                          parent: element,
-                        };
-                      }
-                      case "cycle": {
-                        return {
-                          type: "cycle",
-                          cycle: favorite.cycle!,
-                          uri: favorite.cycle!.id,
-                          parent: element,
-                        };
-                      }
-                      case "roadmap": {
-                        return {
-                          type: "roadmap",
-                          roadmap: favorite.roadmap!,
-                          uri: favorite.roadmap!.id,
-                          parent: element,
-                        };
-                      }
-                      default: {
-                        return undefined;
-                      }
-                    }
-                  })
-                  .filter((item): item is ColinearTreeItem => Boolean(item))
-              : []
-          );
+          return this.linear
+            .favorites()
+            .then((favorites) =>
+              favorites ? computeFavoritesList(favorites, element) : []
+            );
+        }
+        case "favoriteFolder": {
+          return computeFavoritesList(element.children, element);
         }
         case "issue": {
           const attachments = element.issue.attachments.nodes.map(
@@ -369,4 +311,95 @@ function computeProjectList(
       parent,
       uri: project.id,
     }));
+}
+
+/**
+ * Generates a list of tree items for the immediate level, if an item has a parent, it's not included
+ * It will be included via the `folder` favorite that contains it
+ * @param favorites The favorites to generate tree items for
+ * @param element The parent tree item
+ */
+function computeFavoritesList(
+  favorites: FavoritePartial[],
+  element: ColinearTreeItem
+): ColinearTreeItem[] {
+  return favorites
+    .map((favorite): ColinearTreeItem | undefined => {
+      // If the favorite has a parent, it's not included in this level, but will be included in the `folder` item it belongs to
+      if (favorite.parent) {
+        return undefined;
+      }
+      switch (favorite.type) {
+        case "issue": {
+          return {
+            type: "issue",
+            issue: favorite.issue!,
+            uri: favorite.issue!.id,
+            parent: element,
+          };
+        }
+        case "project": {
+          return {
+            type: "project",
+            project: favorite.project!,
+            uri: favorite.project!.id,
+            parent: element,
+          };
+        }
+        case "predefinedView": {
+          switch (favorite.predefinedViewType) {
+            case "activeCycle": {
+              const cycle = favorite.predefinedViewTeam!.activeCycle;
+              return {
+                type: "cycle",
+                cycle,
+                uri: cycle.id,
+                parent: element,
+              };
+            }
+          }
+          return undefined;
+        }
+        case "customView": {
+          return {
+            type: "customView",
+            customView: favorite.customView!,
+            uri: favorite.customView!.id,
+            parent: element,
+          };
+        }
+        case "cycle": {
+          return {
+            type: "cycle",
+            cycle: favorite.cycle!,
+            uri: favorite.cycle!.id,
+            parent: element,
+          };
+        }
+        case "roadmap": {
+          return {
+            type: "roadmap",
+            roadmap: favorite.roadmap!,
+            uri: favorite.roadmap!.id,
+            parent: element,
+          };
+        }
+        case "folder": {
+          return {
+            type: "favoriteFolder",
+            uri: favorite.id,
+            name: favorite.folderName!,
+            children: favorites
+              .filter((fav) => fav.parent?.id === favorite.id)
+              // Unset the parent so that in the next pass it will be rendered
+              .map((fav) => ({ ...fav, parent: undefined })),
+            parent: element,
+          };
+        }
+        default: {
+          return undefined;
+        }
+      }
+    })
+    .filter((item): item is ColinearTreeItem => Boolean(item));
 }
