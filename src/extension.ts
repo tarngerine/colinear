@@ -37,7 +37,6 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 function firstTime(context: vscode.ExtensionContext) {
-  context.globalState.update("linear.hasShownFirstTimeInfo", undefined);
   const isFirstTime =
     context.globalState.get("linear.hasShownFirstTimeInfo") === undefined;
   if (isFirstTime) {
@@ -83,13 +82,19 @@ async function load(
     treeDisposable,
     /** Constantly check if branch has changed via a git client */
     ServerHelper.createLongPoll(() => {
-      if (Git.branchName === provider.lastKnownGitBranch) {
+      if (
+        !vscode.window.state.focused ||
+        Git.branchName === provider.lastKnownGitBranch
+      ) {
         return;
       }
       provider.refresh(provider.root.currentBranch);
     }),
     /** Check less frequently if branch issue has updates (e.g. new PR is up)  */
     ServerHelper.createLongPoll(() => {
+      if (!vscode.window.state.focused) {
+        return;
+      }
       provider.refresh(provider.root.currentBranch);
     }, 5000),
     vscode.commands.registerCommand("colinear.logout", async () => {
