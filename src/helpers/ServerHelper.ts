@@ -6,10 +6,13 @@ export class ServerHelper {
    * @param callback The function to call every second
    * @returns A cleanup function to stop the long poll
    */
-  public static createLongPoll(callback: () => void): { dispose: () => void } {
+  public static createLongPoll(
+    callback: () => void,
+    timeout?: number
+  ): { dispose: () => void } {
     const interval = setInterval(() => {
       callback();
-    }, this.INTERVAL_MS);
+    }, timeout ?? this.INTERVAL_MS);
     return {
       dispose() {
         clearInterval(interval);

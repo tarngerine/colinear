@@ -53,6 +53,10 @@ async function load(context: vscode.ExtensionContext) {
       }
       provider.refresh(provider.root.currentBranch);
     }),
+    /** Check less frequently if branch issue has updates (e.g. new PR is up)  */
+    ServerHelper.createLongPoll(() => {
+      provider.refresh(provider.root.currentBranch);
+    }, 5000),
     vscode.commands.registerCommand("colinear.logout", async () => {
       await SessionHelper.logout();
       treeDisposable.dispose();
