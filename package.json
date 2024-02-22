@@ -1,6 +1,6 @@
 {
-  "publisher": "Linear",
-  "name": "linear",
+  "publisher": "tlshp",
+  "name": "colinear",
   "displayName": "colinear",
   "description": "something",
   "version": "0.0.1",
@@ -65,7 +65,7 @@
       "colinearView": [
         {
           "id": "colinearTree",
-          "name": "Colinear Tree"
+          "name": "Colinear"
         }
       ]
     },

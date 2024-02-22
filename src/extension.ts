@@ -73,7 +73,7 @@ async function load(context: vscode.ExtensionContext) {
     vscode.window.registerUriHandler({
       handleUri: async (uri) => {
         switch (true) {
-          // vscode://Linear.linear/checkout/branch/name
+          // vscode://tlshp.colinear/checkout/branch/name
           case uri.path.startsWith("/checkout"): {
             const branchName = uri.path.split("/").slice(2).join("/");
             await Git.checkout(branchName);
