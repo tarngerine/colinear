@@ -27,6 +27,10 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.2
+
+Quick follow tweaks: hide command menu items, remove duplicate toasts when checking out branch.
+
 ### 0.0.1
 
 Initial prototype
