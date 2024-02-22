@@ -88,10 +88,6 @@ export class Git {
         );
         return;
       }
-      vscode.window.showInformationMessage(
-        `Creating new branch ${branchName} from ${base}`
-      );
-      vscode.window.showInformationMessage(`Creating new branch ${branchName}`);
       try {
         await git?.repositories[0]?.createBranch(branchName, true);
       } catch (e) {
@@ -103,7 +99,7 @@ export class Git {
         return;
       }
       vscode.window.showInformationMessage(
-        `Created and checked out ${Git.branchName}`
+        `Created and checked out ${Git.branchName} from ${base}`
       );
     }
   }

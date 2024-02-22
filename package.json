@@ -90,6 +90,26 @@
         {
           "command": "colinear.logout",
           "when": "linear.hasSession"
+        },
+        {
+          "command": "colinear.refresh",
+          "when": "linear.hasSession"
+        },
+        {
+          "command": "colinear.issue.checkout",
+          "when": "false"
+        },
+        {
+          "command": "colinear.issue.open",
+          "when": "false"
+        },
+        {
+          "command": "colinear.attachment.open",
+          "when": "false"
+        },
+        {
+          "command": "colinear.project.open",
+          "when": "false"
         }
       ],
       "view/title": [
