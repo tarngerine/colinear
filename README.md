@@ -27,6 +27,11 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.4
+
+- Reduce polling so only when window is focused
+- Fix first time info showing every time
+
 ### 0.0.3
 
 - Improve first time launch experience
