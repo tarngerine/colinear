@@ -27,6 +27,11 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.3
+
+- Improve first time launch experience
+- Long poll current branch every 5s to keep it up to date
+
 ### 0.0.2
 
 Quick follow tweaks: hide command menu items, remove duplicate toasts when checking out branch.
