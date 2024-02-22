@@ -12,7 +12,8 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onUri"
+    "onUri",
+    "onStartupFinished"
   ],
   "contributes": {
     "commands": [
@@ -30,6 +31,11 @@
         "command": "colinear.refresh",
         "title": "Colinear: Refresh",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "colinear.reveal",
+        "title": "Colinear: Focus on sidebar",
+        "icon": "$(layout-sidebar-left)"
       },
       {
         "command": "colinear.issue.checkout",
@@ -73,12 +79,12 @@
       {
         "view": "colinearTree",
         "contents": "Log in to get started\n[Log in with Linear](command:colinear.login)",
-        "when": "linear.hasCheckedSession && !linear.hasSession"
+        "when": "linear.shouldShowLogin && !linear.hasSession"
       },
       {
         "view": "colinearTree",
         "contents": "Loading...",
-        "when": "linear.hasSession || !linear.hasCheckedSession"
+        "when": "linear.hasSession || !linear.shouldShowLogin"
       }
     ],
     "menus": {

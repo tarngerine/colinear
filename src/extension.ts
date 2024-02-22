@@ -6,24 +6,59 @@ import { ColinearTreeProvider } from "./tree";
 import { Linear } from "./linear";
 import { SessionHelper } from "./helpers/SessionHelper";
 import { ServerHelper } from "./helpers/ServerHelper";
+import { ContextHelper } from "./helpers/ContextHelper";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "linear" is now active!');
   context.subscriptions.push(
     vscode.commands.registerCommand("colinear.login", async () => {
-      load(context);
+      const session = await SessionHelper.getSessionOrLogIn();
+      if (!session) {
+        vscode.window.showErrorMessage(
+          `We weren't able to log you into Linear, please try again.`
+        );
+        return;
+      }
+      vscode.commands.executeCommand("colinearTree.focus");
+      load(context, session);
+    }),
+    vscode.commands.registerCommand("colinear.reveal", async () => {
+      vscode.commands.executeCommand("colinearTree.focus");
     })
   );
-  load(context);
-}
-
-async function load(context: vscode.ExtensionContext) {
-  const session = await SessionHelper.getSessionOrLogIn();
-
-  if (!session) {
+  if (firstTime(context)) {
+    ContextHelper.set("shouldShowLogin", true);
     return;
   }
+  const session = await SessionHelper.getSessionOrLogIn(false);
+  if (session) {
+    load(context, session);
+  }
+}
 
+function firstTime(context: vscode.ExtensionContext) {
+  context.globalState.update("linear.hasShownFirstTimeInfo", undefined);
+  const isFirstTime =
+    context.globalState.get("linear.hasShownFirstTimeInfo") === undefined;
+  if (isFirstTime) {
+    vscode.window
+      .showInformationMessage("Linear extension installed", "Log in")
+      .then((selection) => {
+        switch (selection) {
+          case "Log in":
+            vscode.commands.executeCommand("colinear.login");
+            break;
+        }
+      });
+    context.globalState.update("linear.hasShownFirstTimeInfo", true);
+  }
+  return isFirstTime;
+}
+
+async function load(
+  context: vscode.ExtensionContext,
+  session: vscode.AuthenticationSession
+) {
   // We wrap the Linear SDK with our own class to add our own graphql queries
   const linearClient = new Linear(
     new LinearClient({

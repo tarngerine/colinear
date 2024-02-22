@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 type ContextTypes = {
-  hasCheckedSession: boolean;
+  shouldShowLogin: boolean;
   hasSession: boolean;
 };
 
