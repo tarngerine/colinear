@@ -27,6 +27,11 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.5
+
+- Added code action to create an issue from any comment line with `TODO`, `FIXME`, `HACK`...
+- Linkifies any Linear issue identifier like `LIN-12345` (cmd + click to open in linear)
+
 ### 0.0.4
 
 - Reduce polling so only when window is focused
