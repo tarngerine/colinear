@@ -17,7 +17,7 @@ import {
  * Wrapper class for the Linear GraphQL API with queries and types we need
  */
 export class Linear {
-  constructor(private linear: LinearClient) {}
+  constructor(public linear: LinearClient) {}
 
   async viewer() {
     return this.linear.viewer;

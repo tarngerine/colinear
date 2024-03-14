@@ -7,6 +7,8 @@ import { Linear } from "./linear";
 import { SessionHelper } from "./helpers/SessionHelper";
 import { ServerHelper } from "./helpers/ServerHelper";
 import { ContextHelper } from "./helpers/ContextHelper";
+import { CreateIssueFromCommentCodeActionsProvider } from "./codeActions";
+import { LinearLinkProvider } from "./documentLinkProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "linear" is now active!');
@@ -143,7 +145,76 @@ async function load(
       (item: Extract<ColinearTreeItem, { type: "project" }>) => {
         vscode.env.openExternal(vscode.Uri.parse(item.project.url));
       }
-    )
+    ),
+    vscode.commands.registerCommand(
+      "colinear.issue.create",
+      async (
+        document: vscode.TextDocument,
+        triggerWord: string,
+        line: number,
+        index: number
+      ) => {
+        // Get the line of text and parse out everything after the trigger word
+        // to prefill as the title
+        const text = document.lineAt(line).text;
+        const title = text.slice(index + triggerWord.length).trim();
+        const viewer = await linearClient.viewer();
+        const teams = (await viewer.teams()).nodes;
+        // Show a quick input to the user
+        const input = await vscode.window.showInputBox({
+          prompt: "Issue title",
+          value: title,
+        });
+        if (!input) {
+          return;
+        }
+        // Show quick pick of teams
+        const selectedTeam = await vscode.window.showQuickPick(
+          teams.map((team) => ({
+            label: team.name,
+            detail: team.key,
+            iconPath: new vscode.ThemeIcon("organization"),
+          })),
+          {
+            placeHolder: "Select team",
+          }
+        );
+        if (!selectedTeam) {
+          return;
+        }
+        const team = teams.find((team) => team.key === selectedTeam.detail);
+        if (!team) {
+          return;
+        }
+        const issue = await linearClient.linear.createIssue({
+          title: input,
+          description: document.lineAt(line).text,
+          teamId: team.id,
+        });
+
+        const identifier = (await issue.issue)?.identifier;
+        if (!identifier) {
+          // show error toast
+          vscode.window.showErrorMessage(
+            "Failed to create issue, please try again."
+          );
+          return;
+        }
+        const edit = new vscode.WorkspaceEdit();
+        const position = new vscode.Position(line, index + triggerWord.length);
+        edit.insert(document.uri, position, `(${identifier})`);
+        vscode.workspace.applyEdit(edit);
+      }
+    ),
+    vscode.languages.registerCodeActionsProvider(
+      "*",
+      new CreateIssueFromCommentCodeActionsProvider(),
+      {
+        providedCodeActionKinds:
+          CreateIssueFromCommentCodeActionsProvider.providedCodeActionKinds,
+      }
+    ),
+    vscode.languages.registerDocumentLinkProvider("*", new LinearLinkProvider())
   );
 }
 

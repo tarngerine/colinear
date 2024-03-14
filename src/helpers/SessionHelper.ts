@@ -9,7 +9,7 @@ export class SessionHelper {
   public static async getSessionOrLogIn(loginIfNone = true) {
     const session = await vscode.authentication.getSession(
       "linear", // Linear VS Code authentication provider ID
-      ["read"], // OAuth scopes we're requesting
+      ["read", "issues:create"], // OAuth scopes we're requesting
       { createIfNone: loginIfNone }
     );
     ContextHelper.set("hasSession", session !== undefined);
