@@ -151,13 +151,26 @@ async function load(
       async (
         document: vscode.TextDocument,
         triggerWord: string,
+        triggerWordWithSymbol: string,
         line: number,
         index: number
       ) => {
+        // Create a github URL based on the document path
+        const url = Git.baseRemoteUrl;
+        const sha = Git.commitSha;
+        const relativeFilePath = vscode.workspace.asRelativePath(document.uri);
+        const linePermalink = `${url}/blob/${sha}/${relativeFilePath}#L${
+          line + 1
+        }`;
+
         // Get the line of text and parse out everything after the trigger word
         // to prefill as the title
         const text = document.lineAt(line).text;
-        const title = text.slice(index + triggerWord.length).trim();
+        let title = text
+          .slice(index + triggerWordWithSymbol.length)
+          // any comment prefix and suffix across different languages: // /* */ # <!-- -->
+          .replace(/(^\/\/|\/\*|\*\/|#|<!--|-->)/g, "")
+          .trim();
         const viewer = await linearClient.viewer();
         const teams = (await viewer.teams()).nodes;
         // Show a quick input to the user
@@ -186,9 +199,22 @@ async function load(
         if (!team) {
           return;
         }
+        // Get the 5 lines of text following the line with the trigger word
+        const linesOfCode = document
+          .getText(
+            new vscode.Range(
+              new vscode.Position(line, 0),
+              new vscode.Position(line + 5, 0)
+            )
+          )
+          .trim();
         const issue = await linearClient.linear.createIssue({
           title: input,
-          description: document.lineAt(line).text,
+          description: `[${relativeFilePath}](${linePermalink})\n
+\`\`\`
+${linesOfCode}
+...
+\`\`\``,
           teamId: team.id,
         });
 
@@ -202,7 +228,7 @@ async function load(
         }
         const edit = new vscode.WorkspaceEdit();
         const position = new vscode.Position(line, index + triggerWord.length);
-        edit.insert(document.uri, position, `(${identifier})`);
+        edit.insert(document.uri, position, ` (${identifier})`);
         vscode.workspace.applyEdit(edit);
       }
     ),

@@ -103,6 +103,44 @@ export class Git {
       );
     }
   }
+
+  /**
+   * Gets the base URL for the remote repository
+   */
+  public static get baseRemoteUrl(): string | undefined {
+    if (!this.isLoaded) {
+      return;
+    }
+    const git = this.extension?.exports?.getAPI(1);
+    const remote = git?.repositories[0]?.state.remotes[0];
+    if (!remote) {
+      return;
+    }
+    const url = remote.fetchUrl;
+    if (!url) {
+      return;
+    }
+    // Handle both HTTPS and SSH remotes
+    const match = url.match(/^(https:\/\/|git@)github.com[:/](.+?)(.git)?$/);
+    if (!match) {
+      return;
+    }
+    const [, protocol, path] = match;
+    const [owner, repo] = path.split("/");
+    return `${protocol}github.com/${owner}/${repo}`;
+  }
+
+  /**
+   * Gets the current commit SHA
+   */
+  public static get commitSha(): string | undefined {
+    if (!this.isLoaded) {
+      return;
+    }
+    const git = this.extension?.exports?.getAPI(1);
+    const commitSha = git?.repositories[0]?.state.HEAD?.commit;
+    return commitSha;
+  }
 }
 
 type GitError = {
