@@ -8,6 +8,8 @@ Linear extension for Visual Studio Code.
 - See linked attachments (e.g. GitHub PRs, Figma designs, Slack conversations)...
 - Check out branches from any Linear issue (shift + V then S in Linear)
 - Detects current branch name and shows the issue
+- Code action for comment lines with TODO, FIXME, HACK, etc. to create an issue
+- Linkifies any Linear issue identifier like `LIN-12345` (cmd + click to open)
 
 ## Requirements
 
@@ -26,6 +28,10 @@ None yet, but some we might add:
 - No live sync, limited live polling due to the above.
 
 ## Release Notes
+
+### 0.0.6
+
+- Improve the issue generated from code action to include GitHub permalink and more context
 
 ### 0.0.5
 
