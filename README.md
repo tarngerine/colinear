@@ -29,6 +29,11 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.7
+
+- Filter out issues that are complete
+- Remove 'ISSUE' trigger word for code action that was causing false positives
+
 ### 0.0.6
 
 - Improve the issue generated from code action to include GitHub permalink and more context
