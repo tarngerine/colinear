@@ -364,7 +364,7 @@ type CycleIssuesResponse = {
 const cycleIssuesQuery = `
   query CycleIssues($id: String!) {
     cycle(id: $id) {
-      issues {
+      issues(filter: {${issueStateFilterFragment}}) {
         nodes {
           ${issueQueryFragment}
         }
@@ -386,7 +386,7 @@ type LabelIssuesResponse = {
 const labelIssuesQuery = `
   query LabelIssues($id: String!) {
     issueLabel(id: $id) {
-      issues {
+      issues(filter: {${issueStateFilterFragment}}) {
         nodes {
           ${issueQueryFragment}
         }
@@ -408,7 +408,7 @@ type CustomViewIssuesResponse = {
 const customViewIssuesQuery = `
   query CustomViewIssues($id: String!) {
     customView(id: $id) {
-      issues {
+      issues(filter: {${issueStateFilterFragment}}) {
         nodes {
           ${issueQueryFragment}
         }
