@@ -40,7 +40,7 @@ export class CreateIssueFromCommentCodeActionsProvider
     line: number
   ): [string, string, number, number] | undefined {
     const text = document.lineAt(line).text;
-    const triggers = ["TODO", "FIXME", "BUG", "HACK", "ISSUE"];
+    const triggers = ["TODO", "FIXME", "BUG", "HACK"];
     // Regex for any of the triggers, which may be preceded by an @ or followed by a :
     const triggerRegex = new RegExp(`(@?(${triggers.join("|")})):?`, "i");
     const match = text.match(triggerRegex);
