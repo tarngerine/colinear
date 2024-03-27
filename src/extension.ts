@@ -213,38 +213,51 @@ async function load(
           )
         );
 
-        vscode.window.showInformationMessage("Creating issue...");
-        const result = await linearClient.linear.createIssue({
-          title: input,
-          description: `[${relativeFilePath}](${linePermalink})\n
-\`\`\`
-${linesOfCode}
-\`\`\``,
-          teamId: team.id,
-          assigneeId: viewer.id,
-        });
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: "Creating issue...",
+            cancellable: false,
+          },
+          async (progress) => {
+            const result = await linearClient.linear.createIssue({
+              title: input,
+              description: `[${relativeFilePath}](${linePermalink})\n
+  \`\`\`
+  ${linesOfCode}
+  \`\`\``,
+              teamId: team.id,
+              assigneeId: viewer.id,
+            });
 
-        const issue = await result.issue;
-        if (!issue) {
-          // show error toast
-          vscode.window.showErrorMessage(
-            "Failed to create issue, please try again."
-          );
-          return;
-        }
+            progress.report({ increment: 100 });
 
-        const identifier = issue.identifier;
-        vscode.window
-          .showInformationMessage(`Issue created: ${identifier}`, "Open")
-          .then((selection) => {
-            if (selection === "Open") {
-              vscode.env.openExternal(vscode.Uri.parse(issue.url));
+            const issue = await result.issue;
+            if (!issue) {
+              // show error toast
+              vscode.window.showErrorMessage(
+                "Failed to create issue, please try again."
+              );
+              return;
             }
-          });
-        const edit = new vscode.WorkspaceEdit();
-        const position = new vscode.Position(line, index + triggerWord.length);
-        edit.insert(document.uri, position, ` (${identifier})`);
-        vscode.workspace.applyEdit(edit);
+
+            const identifier = issue.identifier;
+            vscode.window
+              .showInformationMessage(`Issue created: ${identifier}`, "Open")
+              .then((selection) => {
+                if (selection === "Open") {
+                  vscode.env.openExternal(vscode.Uri.parse(issue.url));
+                }
+              });
+            const edit = new vscode.WorkspaceEdit();
+            const position = new vscode.Position(
+              line,
+              index + triggerWord.length
+            );
+            edit.insert(document.uri, position, ` (${identifier})`);
+            vscode.workspace.applyEdit(edit);
+          }
+        );
       }
     ),
     vscode.languages.registerCodeActionsProvider(
