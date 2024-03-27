@@ -29,6 +29,10 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.9
+
+- Self dismissing toast for code action creating issue
+
 ### 0.0.8
 
 - Improve team ranking for creating issues from code actions
