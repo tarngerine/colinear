@@ -9,6 +9,7 @@ import {
   Project,
   ProjectMilestone,
   Roadmap,
+  Team,
   User,
   WorkflowState,
 } from "@linear/sdk";
@@ -21,6 +22,15 @@ export class Linear {
 
   async viewer() {
     return this.linear.viewer;
+  }
+
+  async myTeams() {
+    const result = await this.linear.client.rawRequest<MyTeamsResponse, {}>(
+      myTeamsQuery
+    );
+    return result.data?.viewer.teamMemberships.nodes
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map(({ team }) => team);
   }
 
   async myIssues() {
@@ -243,6 +253,35 @@ const projectQueryFragment = `
     }
   }
 `;
+
+const myTeamsQuery = `
+  query MyTeamsQuery {
+    viewer {
+      teamMemberships {
+        nodes {
+          sortOrder,
+          team {
+            id,
+            key,
+            color,
+            name
+          }
+        }
+      }
+    }
+  }
+`;
+
+type MyTeamsResponse = {
+  viewer: {
+    teamMemberships: {
+      nodes: {
+        sortOrder: number;
+        team: Pick<Team, "id" | "key" | "color" | "name">;
+      }[];
+    };
+  };
+};
 
 const myIssuesQuery = `
   query MyIssues {

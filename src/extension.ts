@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { LinearClient } from "@linear/sdk";
+import { LinearClient, Team } from "@linear/sdk";
 import { Git } from "./git";
 import { ColinearTreeItem } from "./items";
 import { ColinearTreeProvider } from "./tree";
@@ -171,8 +171,14 @@ async function load(
           // any comment prefix and suffix across different languages: // /* */ # <!-- -->
           .replace(/(^\/\/|\/\*|\*\/|#|<!--|-->)/g, "")
           .trim();
-        const viewer = await linearClient.viewer();
-        const teams = (await viewer.teams()).nodes;
+        const teams = await linearClient.myTeams();
+        if (!teams) {
+          vscode.window.showErrorMessage(
+            "Failed to fetch teams, please try again."
+          );
+          return;
+        }
+
         // Show a quick input to the user
         const input = await vscode.window.showInputBox({
           prompt: "Issue title",
@@ -199,33 +205,42 @@ async function load(
         if (!team) {
           return;
         }
-        // Get the 5 lines of text following the line with the trigger word
-        const linesOfCode = document
-          .getText(
-            new vscode.Range(
-              new vscode.Position(line, 0),
-              new vscode.Position(line + 5, 0)
-            )
+        // Get the 5 lines of text following the line with the trigger word + 2 previous
+        const linesOfCode = document.getText(
+          new vscode.Range(
+            new vscode.Position(line - 2, 0),
+            new vscode.Position(line + 5, 0)
           )
-          .trim();
-        const issue = await linearClient.linear.createIssue({
+        );
+
+        vscode.window.showInformationMessage("Creating issue...");
+        const result = await linearClient.linear.createIssue({
           title: input,
           description: `[${relativeFilePath}](${linePermalink})\n
 \`\`\`
 ${linesOfCode}
-...
 \`\`\``,
           teamId: team.id,
+          assigneeId: viewer.id,
         });
 
-        const identifier = (await issue.issue)?.identifier;
-        if (!identifier) {
+        const issue = await result.issue;
+        if (!issue) {
           // show error toast
           vscode.window.showErrorMessage(
             "Failed to create issue, please try again."
           );
           return;
         }
+
+        const identifier = issue.identifier;
+        vscode.window
+          .showInformationMessage(`Issue created: ${identifier}`, "Open")
+          .then((selection) => {
+            if (selection === "Open") {
+              vscode.env.openExternal(vscode.Uri.parse(issue.url));
+            }
+          });
         const edit = new vscode.WorkspaceEdit();
         const position = new vscode.Position(line, index + triggerWord.length);
         edit.insert(document.uri, position, ` (${identifier})`);

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { linearIssueIdentifierRegex } from "./documentLinkProvider";
 /**
  * Code actions that detect TODO/FIXME comment trigger words and creates Linear issues
  */
@@ -21,7 +22,7 @@ export class CreateIssueFromCommentCodeActionsProvider
     }
     const [triggerWord, triggerWordWithSymbol, line, index] = trigger;
     const action = new vscode.CodeAction(
-      "Create Linear issue from comment",
+      "Create Linear issue",
       vscode.CodeActionKind.QuickFix
     );
     action.command = {
@@ -40,6 +41,10 @@ export class CreateIssueFromCommentCodeActionsProvider
     line: number
   ): [string, string, number, number] | undefined {
     const text = document.lineAt(line).text;
+    const identifier = text.match(linearIssueIdentifierRegex);
+    if (identifier) {
+      return;
+    }
     const triggers = ["TODO", "FIXME", "BUG", "HACK"];
     // Regex for any of the triggers, which may be preceded by an @ or followed by a :
     const triggerRegex = new RegExp(`(@?(${triggers.join("|")})):?`, "i");
