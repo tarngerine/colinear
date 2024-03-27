@@ -29,6 +29,12 @@ None yet, but some we might add:
 
 ## Release Notes
 
+### 0.0.8
+
+- Improve team ranking for creating issues from code actions
+- Assign created issues to yourself, and show a toast after creation
+- Fix code formatting in the created issue description, add a few more lines of context
+
 ### 0.0.7
 
 - Filter out issues that are complete
